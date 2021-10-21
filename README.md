@@ -58,16 +58,16 @@ The outcome ```optres``` provide multiple outcomes. Some of the main results are
 4) use ```optres$fakename``` to get the names used by the model. They are the names which are displayed in ```optres$fulldata[[2]]$feature```
 
 ## Hyperparameter optimization
-In case, the number of small datasets, k ```clustersize``` is not known. Algorithm can provide its optimal value using genetic algorithm based hyperparameter optimization function ```hyperpara-optimize```.
+In case, three hyperparameters, namely, number of features in a sample (q) ```q, k```, coefficient estimate quantile threshold (Qi) ```qthresh, cint``` and minimum R2 threshold (Rf) ```minr2 , sd_level``` are not known. Algorithm can provide its optimal value using genetic algorithm based hyperparameter optimization function ```cv_hyperopt```.
 ```
 ## Define the parameters
 HDSI_para = list(model="reg", covariate=c(1), outvar="y", bootstrap=T, effectsize=5, min_max= "min", model_tech ="reg", interactions=T, int_term=2, intercept=T, out_type="continuous", perf_metric=c("mp_beta"))
 
-## Get optimal hyperparameters
-plan(multisession(workers =10))
+## Run optimization
+plan(multisession(workers =10)) # for parallel computing
 opt_para = cv_hyperopt(seeder=1,df=df, sp = HDSI_para)
 
-# Run HDSI
+# Get hyperparameters values
 q = floor(opt_para[1])
 minr2 = round(opt_para[2],3)
 qthresh = round(opt_para[3],3)
@@ -75,5 +75,5 @@ qthresh = round(opt_para[3],3)
 
 ## Limitations of Algorithm
 1) This algorithm can only process continuous data
-2) Currently, output is only the predictive performance in three metrics namely correlation, mean square error and r-squared
-3) It doe not directly provide the final model or feature weights. However, one can determine the weights by looking at function ```DMU```. The result is stored in the data.frame ```bay_reg```.
+2) This algorithm is tested only for continuous outcome
+3) Outcome feature should be labeled "y" and must be present as the last column in the dataset.
