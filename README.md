@@ -40,9 +40,9 @@ df # list containing training dataset and test dataset
 Once the training and test dataset are obtained, HDSI algorithm ```HDSI_model``` can do feature selection. It requires information on three hyperparameters, namely, number of features in a sample (q) ```q, k```, coefficient estimate quantile threshold (Qi) ```qthresh, cint``` and minimum R2 threshold (Rf) ```minr2 , sd_level```. HDSI_model can be run for many statistical methods like lasso, adaptive lasso, ridge, adaptive ridge, simple regression, forward regression ```model```. One can increase the number of bootstraps by increasing ```effectsize```. The algorithm allows to add control features ```covariate```, when no covariate is added it should be given the value of 1. Some other parameters ```para``` are also defined regarding the model like level of interactions ```int_term``` and use of intercept in final model ```intercept```.
 ```
 # Get Parameters
-q = 
-minr2 = 
-qthresh = 
+q = 9
+minr2 = 1.253 
+qthresh = 0.968
 
 optres = HDSI_model(model="reg", inputdf=df , seed=1, effectsize=32,
                     k=q,  cint = qthresh, sd_level=minr2,
