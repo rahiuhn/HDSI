@@ -11,67 +11,66 @@ This tutorial will explain how to run the HDSI code. The current HDSI algorithm 
 This algorithm uses many R packages which needs to be installed or loaded before using this algorithm. 
 ```
 # Versions used in the current algorithm are:
-# memoise (>= 1.1.0), dplyr (>= 0.8.4), stringr (>= 1.4.0), stats (>= 3.6.2), scales (>= 1.1.0), caret (>= 6.0-86), 
-magrittr (>= 1.5), janitor (>= 1.2.1), MLmetrics (>= 1.1.1), mice (>= 3.8.0), GA (>= 3.2), MCMCpack (>= 1.4-8), 
-copula (>= 1.0-0), gtools (>= 3.8.2), mosaic (>= 1.8.2), future (>= 1.20.1), future.apply (>= 1.6.0), missForest (>= 1.4), 
-pkgcond (>= 0.1.0), bnstruct (>= 1.0.8), DMwR (>= 0.4.1), VIM (>= 6.1.0), SimMultiCorrData (>= 0.2.2), pbapply (>= 1.4-3)
+# data.table (>= 1.9.4), stats (>= 3.6.2), glmnet (>= 3.0-2), survival (>= 3.1-8), glinternet (>= 1.0.10), pbapply (>= 1.4-2),
+  spls (>= 2.2-3), naturalsort (>= 0.1.3), gtools (>= 3.8.1), MLmetrics (>= 1.1.1), MASS (>= 7.3-51.5), mosaic (>= 1.5.0),
+  plyr (>= 1.8.5), miscset (>= 1.1.0), spatstat.utils (>= 1.17-0), memoise (>= 1.1.0), dplyr (>= 0.8.4), stringr (>= 1.4.0),
+  future.apply (>= 1.6.0), GA (>= 3.2), caret (>= 6.0-86), purrr (>= 0.3.4), ggplot2 (>= 3.3.2), ggpubr (>= 0.4.0)
 
 install.packages("pacman")
 library(pacman)
-pacman::p_load(memoise, dplyr, stringr, stats, scales, caret, magrittr, janitor, MLmetrics, mice, GA, MCMCpack, copula, 
-gtools, mosaic, future, future.apply, missforest, pkgcond, bnstruct, DMwR, VIM, SimMultiCorrData, pbapply)
+pacman::p_load(data.table, stats, glmnet, survival, glinternet, pbapply, spls, scales, naturalsort, gtools, MLmetrics, MASS, 
+mosaic, plyr, miscset, spatstat.utils, memoise, dplyr, stringr, future.apply, GA, caret, purrr, ggplot2, ggpubr)
 ```
 
 ## Generate simulated dataset
-The algorithm allows the user to generate an artificial dataset but with limited functionality. The dataset generated contains 20 input features ```varnum```. 80% of missing values ```maxmiss_per``` in each of the 20 features are missing completely at random. The correlation among 20 features lies in the range of [-0.5,0.5]. Currently, only first three features are allowed to have effect on the model. The coefficient values are (0.2, 0.3, 0.4) with interaction coefficient of 10. The training dataset generated has no complete rows (NCR).
+The algorithm allows the user to generate an artificial dataset but with limited functionality. The dataset generated contains 25 input features ```varnum```. The coefficient values are (X1 = 0.2, X2 = 0.3, X3 = 0.4, X1X2 = 0.4) with intercept coefficient of 1.
 ```
-dataset = data_sim(varnum =20, # 20 features 
-                   maxmiss_per= 0.8, # 80% missing per column 
-                   corr_seed=1, # seed number to ensure reproducibility
-                   testsize = 1050, # sample size of test data
-                   samplesize=4200, # total number of samples generated training +test samples
-                   effect="Mar", # Only marginal effects are present in the original model. 
-                   max_corr= 0.5) # Correlation among features will lie in between [-0.5, 0.5]
-traindata = dataset$train
-testdata = dataset$test
-truetrain = dataset$truedata
+df = dataset(varnum =25, # Marginal feature space, p
+             setting="Correlation", # Correlation is present among some features
+             var=c("Mar"), # Outcome is influenced by both marginal and interaction terms
+             seed=2, # seed number to ensure reproducibility
+             high_dim=F, # More complex dataset is not allowed 
+             train_sample=500) # sample size training data. Test dataset is fixed at 500 samples
+             
+df # list containing training dataset and test dataset
 
-write.csv(traindata,"traindata_SCR_Art.csv")
-write.csv(testdata,"testdata_SCR_Art.csv")
-write.csv(truetrain,"originaldata_SCR_Art.csv")
 ```
 
-## Run DMU and compare its performance
-Once the training and test dataset are obtained. One can run the DMU algorithm. The function ```sim_fit``` allows the user to run and compare 6 missing imputation methods namely DMU (```DMU```), mean imputation (```mean```), kNN impute (```knn```), Random Forest impute (```rf```), complete case analysis (```reg```), mice (only pmm) (```mice```). Additionally, it provides the true model ```true``` if ```truetrain``` variable contains complete data. In case we want to add some complete rows to training data to change it from NCR to SCR (Some complete rows), ```datatype``` should be assigned value ```"createSCR"``` which will randomly transfer 50 samples with complete information from test data to training data. Otherwise, give ```datatype``` suitable value like ```"NCR"``` or ```"SCR"```. 
+## Run HDSI
+Once the training and test dataset are obtained, HDSI algorithm ```HDSI_model``` can do feature selection. It requires information on three hyperparameters, namely, number of features in a sample (q) ```q, k```, coefficient estimate quantile threshold (Qi) ```qthresh, cint``` and minimum R2 threshold (Rf) ```minr2 , sd_level```. HDSI_model can be run for many statistical methods like lasso, adaptive lasso, ridge, adaptive ridge, simple regression, forward regression ```model```. One can increase the number of bootstraps by increasing ```effectsize```. The algorithm allows to add control features ```covariate```, when no covariate is added it should be given the value of 1. Some other parameters ```para``` are also defined regarding the model like level of interactions ```int_term``` and use of intercept in final model ```intercept```.
 ```
 # Get Parameters
-clustersize= 4 # number of small complete dataset that will created for DMU
-sample_to_featureratio = 2 # Minimum sample size to feature ratio to be maintained in small complete datasets
-para= list(seed=1, sample_clustersize = clustersize, sample_to_featureratio=sample_to_featureratio, datatype="createSCR")
+q = 
+minr2 = 
+qthresh = 
 
-## Results
-res = sim_fit(x = para, traindata= traindata, testdata = testdata, truetrain = truetrain, 
-              technique= c("DMU", "knn", "mice", "reg","mean", "rf"), splitype = "old")
-res$datatype = "SCR"
-finalres = res
-finalres
-Output:
-            MSE         Approach seed datatype
-DMU  0.10094285        beta_Prop    1      SCR
-knn  0.09526723         beta_knn    1      SCR
-mice 0.17535876 beta_Imputed_Reg    1      SCR
-reg  0.09995927         beta_Reg    1      SCR
-mean 0.11734702        beta_mean    1      SCR
-rf   0.10774280          beta_Rf    1      SCR
-true 0.06532334        beta_true    1      SCR
+optres = HDSI_model(model="reg", inputdf=df , seed=1, effectsize=32,
+                    k=q,  cint = qthresh, sd_level=minr2,
+                    para=HDSI_para_control(interactions=T, int_term=2, intercept=T,
+                                           out_type="continuous", perf_metric=c("mp_beta")),
+                    covariate=c(1),  min_max= c("min"))
+optres
 ```
+The outcome ```optres``` provide multiple outcomes. Some of the main results are as follows:
+1) use ```optres$performance``` to check for model performance in training and testing data
+2) use ```optres$fulldata[[2]]$feature``` to check the selected features
+3) use ```optres$realname``` to get the real names of the features
+4) use ```optres$fakename``` to get the names used by the model. They are the names which are displayed in ```optres$fulldata[[2]]$feature```
 
 ## Hyperparameter optimization
 In case, the number of small datasets, k ```clustersize``` is not known. Algorithm can provide its optimal value using genetic algorithm based hyperparameter optimization function ```hyperpara-optimize```.
 ```
-clustersize = hyperpara_optimize(optimtype = "opt_GA", seed=1, traindata= traindata, testdata = testdata, datatype = "createSCR")
-clustersize
-Output: 4
+## Define the parameters
+HDSI_para = list(model="reg", covariate=c(1), outvar="y", bootstrap=T, effectsize=5, min_max= "min", model_tech ="reg", interactions=T, int_term=2, intercept=T, out_type="continuous", perf_metric=c("mp_beta"))
+
+## Get optimal hyperparameters
+plan(multisession(workers =10))
+opt_para = cv_hyperopt(seeder=1,df=df, sp = HDSI_para)
+
+# Run HDSI
+q = floor(opt_para[1])
+minr2 = round(opt_para[2],3)
+qthresh = round(opt_para[3],3)
 ```
 
 ## Limitations of Algorithm
